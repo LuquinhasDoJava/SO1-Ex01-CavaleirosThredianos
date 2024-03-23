@@ -1,18 +1,17 @@
 package view;
 
+import controller.CavaleirosThredianos;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-import controller.CavaleirosThredianos;
-
 public class Main {
-	public static void main(String[] args) {
-		Semaphore tocha = new Semaphore(1);
-		Semaphore pedra = new Semaphore(1);
-
-		System.out.println("Chuvisco de xuca");
-		for (int x = 1; x <= 4; x++) {
-			CavaleirosThredianos ct = new CavaleirosThredianos(x,4,tocha,pedra);
-			ct.start();
-		}
-	}
+    public static void main(String[] args) {
+        Semaphore pegarItens = new Semaphore(1);
+        Random random = new Random();
+        int portaCerta = random.nextInt(0,4);
+        for (int x = 1; x<=4; x++) {
+            CavaleirosThredianos cv = new CavaleirosThredianos(pegarItens,x,portaCerta);
+            cv.start();
+        }
+    }
 }
