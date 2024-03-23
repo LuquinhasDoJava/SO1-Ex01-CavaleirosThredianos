@@ -3,98 +3,128 @@ package controller;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-public class CavaleirosThredianos extends Thread {
-	private int cavaleiro;
-	private int portaCerta;
-	Semaphore tocha;
-	Semaphore pedra;
-	private int itens = 0;
+public class CavaleirosThredianos extends Thread{
+    private Semaphore escolherPorta;
+    private Semaphore pegarItem;
+    private Random random;
+    private int itens;
+    private int cavaleiro;
+    private static int []portas;
+    private static boolean pedra;
+    private static boolean tocha;
+    public CavaleirosThredianos(Semaphore pegarItem, int cavaleiro, int portaCerta){
+        this.pegarItem = pegarItem;
+        this.escolherPorta = new Semaphore(1);
+        random = new Random();
+        itens = 0;
+        this.cavaleiro = cavaleiro;
+        portas = new int[]{0, 0, 0, 0};
+        portas[portaCerta] = 1;
+        tocha = true;
+        pedra = true;
+    }
+    public void run(){
+        primeiraParte();
+    }
 
-	public CavaleirosThredianos(int x, int porta, Semaphore tocha, Semaphore pedra) {
-		Random random = new Random();
-		this.cavaleiro = x;
-		this.portaCerta = random.nextInt(4);
-		this.pedra = pedra;
-		this.tocha = tocha;
+    private void primeiraParte() {
+        int distancia = 0;
+        do{
+            distancia += random.nextInt(2,5);
+            try {
+                sleep(50);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Cavaleiro "+cavaleiro+" j√° percorreu:"+distancia+"m");
+        }while (distancia <500);
+        pegarTocha();
+        segundaParte(distancia);
+    }
 
-	}
+    private void segundaParte(int distancia) {
+        do{
+            distancia += (random.nextInt(2,5)+(2*itens));
+            try {
+                sleep(50);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Cavaleiro "+cavaleiro+" j√° percorreu:"+distancia+"m");
+        }while (distancia <1500);
+        pegarPedra();
+        terceiraParte(distancia);
+    }
 
-	public void run() {
-		primeiraParte();
-	}
+    private void terceiraParte(int distancia) {
+        do{
+            distancia += (random.nextInt(2,5)+(2*itens));
+            try {
+                sleep(50);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            System.out.println("Cavaleiro "+cavaleiro+" j√° percorreu:"+distancia+"m");
+        }while (distancia <2000);
+        escolherPorta();
+    }
 
-	private void primeiraParte() {
-		int x = 0;
-		Random random = new Random();
-		do {
-			x += random.nextInt(500);
-			System.out.println("Cavaleiro: " + cavaleiro + " j· percorreu " + x + "m");
-			try {
-				sleep(50);
-			} catch (InterruptedException e) {
-			}
-		} while (x < 500);
+    private void escolherPorta() {
+        boolean portaValida = true;
+        try {
+            escolherPorta.acquire();
+        do{
+            int escolha = random.nextInt(0,4);
+            if(portas[escolha]==0){
+                System.err.println("Cavaleiro "+cavaleiro+" entrou na porta "+ (escolha+1)+" e foi devorado!!");
+                portas[escolha] = 3;
+                portaValida = false;
+            }
+            if (portas[escolha]==1) {
+                System.err.println("Cavaleiro "+cavaleiro+" entrou na porta "+ (escolha+1)+" e saiu vivo!!");
+                portas[escolha] = 3;
+                portaValida = false;
+            }
+        }while (portaValida);
+            System.out.println("Cavaleiro "+cavaleiro+" terminou a jornada com: "+itens+" itens!");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }finally {
+            escolherPorta.release();
+        }
+    }
 
-		System.out.println("Cavaleiros: " + cavaleiro + " est· indo para a segunda parte");
-		segundaParte(x);
-		this.itens += pegarTocha();
-	}
+    private void pegarTocha() {
+        try {
+            pegarItem.acquire();
+            if(tocha){
+                tocha = false;
+                itens++;
+                System.err.println("Cavaleiro "+cavaleiro+" pegou a tocha!");
+            }else {
+                System.out.println("Cavaleiro "+cavaleiro+" n√£o conseguiu pegar a tocha");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }finally {
+            pegarItem.release();
+        }
+    }
 
-	private void segundaParte(int x) {
-		Random random = new Random();
-		do {
-			x += random.nextInt(500) + (itens * 2);
-			System.out.println("Cavaleiro: " + cavaleiro + " j· percorreu " + x + "m");
-			try {
-				sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		} while (x < 1500);
-		this.itens = pegarPedra();
-		System.out.println("Cavaleiro: " + cavaleiro + " est· indo para a segunda parte");
-		terceiraParte(x);
-	}
-
-	private void terceiraParte(int x) {
-		Random random = new Random();
-		do {
-			x += random.nextInt(500) + (itens * 2);
-			System.out.println("Cavaleiro: " + cavaleiro + " j· percorreu " + x + "m");
-			try {
-				sleep(50);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		} while (x < 2000);
-		if (portaCerta == cavaleiro) {
-			System.out.println("Cavaleiro: " + cavaleiro + " conseguiu sair vivo com" + itens + " itens");
-		} else {
-			System.out.println("Cavaleiro: " + cavaleiro + " foi devorado com " + itens + " itens");
-		}
-	}
-	private int pegarTocha() {
-		try {
-			tocha.acquire();
-			System.out.println("Cavaleiros: "+cavaleiro+" pegou a tocha");
-			return 1;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}finally {
-		System.out.println("N„o pegou a tocha");
-		return 0;
-		}
-	}
-	private int pegarPedra() {
-		try {
-			pedra.acquire();
-			System.out.println("Cavaleiros: "+cavaleiro+" pegou a tocha");
-			return 1;
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		System.out.println("N„o pegou o item");
-		return 0;
-	}
-
+    private void pegarPedra() {
+        try {
+            pegarItem.acquire();
+            if(pedra){
+                pedra = false;
+                itens++;
+                System.err.println("Cavaleiro "+cavaleiro+" pegou a pedra!");
+            }else {
+                System.out.println("Cavaleiro "+cavaleiro+" n√£o conseguiu pegar a pedra");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }finally {
+            pegarItem.release();
+        }
+    }
 }
